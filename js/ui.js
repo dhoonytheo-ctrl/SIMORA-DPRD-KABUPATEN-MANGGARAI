@@ -232,6 +232,28 @@ async function renderDashboard() {
                 }
             };
         }
+
+        // Quick Sync (Super Admin only)
+        const quickSyncBtn = document.getElementById('quickSyncBtn');
+        if (quickSyncBtn) {
+            if (isSuperAdmin()) show(quickSyncBtn); else hide(quickSyncBtn);
+            quickSyncBtn.onclick = async () => {
+                try {
+                    showToast('Menarik data dari Firebase...', 'info');
+                    if (window.firebaseSync && typeof window.firebaseSync.pullFromFirebase === 'function') {
+                        await window.firebaseSync.pullFromFirebase();
+                        showToast('Sinkronisasi lokal selesai. Mengirim perubahan ke Firebase...', 'info');
+                        await window.firebaseSync.syncToFirebase();
+                        showToast('Sinkronisasi lengkap dengan Firebase berhasil', 'success');
+                    } else {
+                        showToast('Fungsi sinkronisasi tidak tersedia', 'warning');
+                    }
+                } catch (err) {
+                    error('Quick Sync error:', err);
+                    showToast('Sinkronisasi gagal: ' + err.message, 'error');
+                }
+            };
+        }
         
         // Update menu titles with years
         updateMenuTitles();
