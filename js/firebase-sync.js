@@ -6,6 +6,8 @@
 let firebaseApp = null;
 let firestore = null;
 let autoSyncInterval = null;
+let useRealtime = false;
+let realtimeUrl = null;
 
 async function initFirebase(config) {
     try {
@@ -14,6 +16,14 @@ async function initFirebase(config) {
         if (!cfg || !cfg.apiKey) {
             console.warn('Firebase config not provided or invalid');
             return false;
+        }
+
+        // If only Realtime Database URL provided, use REST fallback
+        if (cfg.databaseURL && !cfg.apiKey) {
+            useRealtime = true;
+            realtimeUrl = cfg.databaseURL.replace(/\/$/, '');
+            log('Using Realtime Database REST sync at ' + realtimeUrl);
+            return true;
         }
 
         // Use compat CDN (index.html must include firebase scripts)
@@ -50,6 +60,22 @@ async function initFirebaseFromSettings() {
 }
 
 async function syncToFirebase() {
+    if (useRealtime && realtimeUrl) {
+        try {
+            const backup = await exportAllData();
+            const url = `${realtimeUrl}/simora_backups/latest.json`;
+            await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(backup)
+            });
+            log('Data synced to Realtime Database (REST)');
+        } catch (err) {
+            error('Error syncing to Realtime DB:', err);
+        }
+        return;
+    }
+
     if (!firestore) {
         log('Firestore not initialized; skipping sync');
         return;
@@ -66,6 +92,25 @@ async function syncToFirebase() {
 }
 
 async function pullFromFirebase() {
+    if (useRealtime && realtimeUrl) {
+        try {
+            const url = `${realtimeUrl}/simora_backups/latest.json`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                log('No remote backup found in Realtime DB');
+                return;
+            }
+            const backup = await res.json();
+            if (backup) {
+                await mergeImport(backup);
+                log('Data pulled from Realtime DB and merged');
+            }
+        } catch (err) {
+            error('Error pulling from Realtime DB:', err);
+        }
+        return;
+    }
+
     if (!firestore) return;
     try {
         const doc = await firestore.collection('simora_backups').doc('latest').get();
