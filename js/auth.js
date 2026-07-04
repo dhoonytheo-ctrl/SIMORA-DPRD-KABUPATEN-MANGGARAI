@@ -11,8 +11,17 @@ let sessionTimeoutTimer = null;
 
 async function login(usernameOrEmail, pin) {
     try {
+        function recordLoginFailure(reason, input, user) {
+            try {
+                const payload = { time: getISOTimestamp(), reason, input, userId: user ? user.id : null };
+                localStorage.setItem('SIMORA_LAST_LOGIN_ERROR', JSON.stringify(payload));
+                error('Login failed:', payload);
+            } catch (e) { console.error('Failed to record login failure', e); }
+        }
+
         // Allow login via email or username
         if (!usernameOrEmail) {
+            recordLoginFailure('empty_input', '', null);
             return { success: false, message: 'Nama pengguna atau email harus diisi' };
         }
         const input = String(usernameOrEmail).trim();
@@ -25,6 +34,7 @@ async function login(usernameOrEmail, pin) {
         }
         log('Login attempt for:', { input, foundUser: !!user });
         if (!user) {
+            recordLoginFailure('user_not_found', input, null);
             return { success: false, message: isEmail ? 'Email tidak ditemukan' : 'Nama pengguna tidak ditemukan' };
         }
         
@@ -33,13 +43,16 @@ async function login(usernameOrEmail, pin) {
         const inputPin = pin == null ? '' : String(pin).trim();
         if (user.role !== 'superadmin') {
             if (!isValidPIN(inputPin)) {
+                recordLoginFailure('invalid_pin_format', input, user);
                 return { success: false, message: 'PIN harus 4-6 digit angka' };
             }
             if (userPin !== inputPin) {
+                recordLoginFailure('wrong_pin', input, user);
                 return { success: false, message: 'PIN salah' };
             }
         } else {
             if (inputPin && userPin !== inputPin) {
+                recordLoginFailure('superadmin_wrong_pin', input, user);
                 return { success: false, message: 'PIN salah' };
             }
         }
@@ -56,6 +69,7 @@ async function login(usernameOrEmail, pin) {
         }
         
         // Normal login
+        localStorage.removeItem('SIMORA_LAST_LOGIN_ERROR');
         setCurrentSession(user);
         await logActivity('login', { username: user.username });
         startSessionTimeout();
@@ -68,6 +82,7 @@ async function login(usernameOrEmail, pin) {
         
     } catch (err) {
         error('Login error:', err);
+        try { localStorage.setItem('SIMORA_LAST_LOGIN_ERROR', JSON.stringify({ time: getISOTimestamp(), reason: 'exception', message: err.message })); } catch (e) {}
         return { success: false, message: 'Terjadi kesalahan saat login' };
     }
 }
