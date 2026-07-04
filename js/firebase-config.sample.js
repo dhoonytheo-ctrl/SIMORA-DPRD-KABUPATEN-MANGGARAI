@@ -1,6 +1,6 @@
 /* Copy this file to js/firebase-config.js and fill with your Firebase project config.
    Example (replace with your actual values):
-
+*/
 window.firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "your-project.firebaseapp.com",

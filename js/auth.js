@@ -50,7 +50,7 @@ async function login(usernameOrEmail, pin) {
         
         // Normal login
         setCurrentSession(user);
-        await logActivity('login', { username: username });
+        await logActivity('login', { username: user.username });
         
         startSessionTimeout();
         
