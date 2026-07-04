@@ -15,24 +15,31 @@ async function login(usernameOrEmail, pin) {
         if (!usernameOrEmail) {
             return { success: false, message: 'Nama pengguna atau email harus diisi' };
         }
-
-        const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(usernameOrEmail);
-        // Find user by email or username
-        const user = isEmail ? await getUserByEmail(usernameOrEmail) : await getUserByUsername(usernameOrEmail);
+        const input = String(usernameOrEmail).trim();
+        const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input);
+        // Find user by email or username (try both fallbacks)
+        let user = isEmail ? await getUserByEmail(input) : await getUserByUsername(input);
+        if (!user) {
+            // try alternate lookup: if input looks like username but could be email, try both
+            user = await getUserByUsername(input) || await getUserByEmail(input);
+        }
+        log('Login attempt for:', { input, foundUser: !!user });
         if (!user) {
             return { success: false, message: isEmail ? 'Email tidak ditemukan' : 'Nama pengguna tidak ditemukan' };
         }
         
         // Super Admin login can skip PIN
+        const userPin = user.pin == null ? '' : String(user.pin);
+        const inputPin = pin == null ? '' : String(pin).trim();
         if (user.role !== 'superadmin') {
-            if (!isValidPIN(pin)) {
+            if (!isValidPIN(inputPin)) {
                 return { success: false, message: 'PIN harus 4-6 digit angka' };
             }
-            if (user.pin !== pin) {
+            if (userPin !== inputPin) {
                 return { success: false, message: 'PIN salah' };
             }
         } else {
-            if (pin && user.pin !== pin) {
+            if (inputPin && userPin !== inputPin) {
                 return { success: false, message: 'PIN salah' };
             }
         }
@@ -51,9 +58,7 @@ async function login(usernameOrEmail, pin) {
         // Normal login
         setCurrentSession(user);
         await logActivity('login', { username: user.username });
-        
         startSessionTimeout();
-        
         return { 
             success: true, 
             firstLogin: false, 
