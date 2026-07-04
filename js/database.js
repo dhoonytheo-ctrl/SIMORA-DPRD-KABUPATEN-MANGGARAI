@@ -204,7 +204,9 @@ async function deleteUser(userId) {
 
 async function getUserByUsername(username) {
     const users = await getAllRecords(STORES.users);
-    return users.find(u => u.username === username);
+    if (!username) return null;
+    const needle = String(username).toLowerCase();
+    return users.find(u => String(u.username || '').toLowerCase() === needle);
 }
 
 async function getUserByEmail(email) {
