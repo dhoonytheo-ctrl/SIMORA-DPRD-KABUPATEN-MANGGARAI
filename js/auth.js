@@ -9,16 +9,18 @@ let sessionTimeoutTimer = null;
 // LOGIN FUNCTION
 // ============================================
 
-async function login(username, pin) {
+async function login(usernameOrEmail, pin) {
     try {
-        if (!isValidUsername(username)) {
-            return { success: false, message: 'Nama pengguna tidak valid' };
+        // Allow login via email or username
+        if (!usernameOrEmail) {
+            return { success: false, message: 'Nama pengguna atau email harus diisi' };
         }
-        
-        // Find user
-        const user = await getUserByUsername(username);
+
+        const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(usernameOrEmail);
+        // Find user by email or username
+        const user = isEmail ? await getUserByEmail(usernameOrEmail) : await getUserByUsername(usernameOrEmail);
         if (!user) {
-            return { success: false, message: 'Nama pengguna tidak ditemukan' };
+            return { success: false, message: isEmail ? 'Email tidak ditemukan' : 'Nama pengguna tidak ditemukan' };
         }
         
         // Super Admin login can skip PIN

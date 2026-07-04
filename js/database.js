@@ -175,28 +175,41 @@ async function clearStore(storeName) {
 // ============================================
 
 async function addUser(user) {
-    return putRecord(STORES.users, {
+    const res = await putRecord(STORES.users, {
         ...user,
         id: user.id || generateUUID(),
         created_at: getISOTimestamp(),
         updated_at: getISOTimestamp()
     });
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
+
 async function updateUser(user) {
-    return putRecord(STORES.users, {
+    const res = await putRecord(STORES.users, {
         ...user,
         updated_at: getISOTimestamp()
     });
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
+
 async function deleteUser(userId) {
-    return deleteRecord(STORES.users, userId);
+    const res = await deleteRecord(STORES.users, userId);
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function getUserByUsername(username) {
     const users = await getAllRecords(STORES.users);
     return users.find(u => u.username === username);
+}
+
+async function getUserByEmail(email) {
+    const users = await getAllRecords(STORES.users);
+    return users.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
 }
 
 async function getAllUsers() {
@@ -208,24 +221,30 @@ async function getAllUsers() {
 // ============================================
 
 async function addDataRecord(storeName, data) {
-    return putRecord(storeName, {
+    const res = await putRecord(storeName, {
         ...data,
         id: data.id || generateUUID(),
         created_at: data.created_at || getISOTimestamp(),
         updated_at: getISOTimestamp(),
         created_by: data.created_by || getCurrentUserId()
     });
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function updateDataRecord(storeName, data) {
-    return putRecord(storeName, {
+    const res = await putRecord(storeName, {
         ...data,
         updated_at: getISOTimestamp()
     });
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function deleteDataRecord(storeName, recordId) {
-    return deleteRecord(storeName, recordId);
+    const res = await deleteRecord(storeName, recordId);
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function getDataRecords(storeName) {
@@ -259,8 +278,9 @@ async function uploadFile(file, category) {
         reader.onload = async () => {
             fileData.content = reader.result;
             try {
-                await putRecord(STORES.files, fileData);
-                resolve(fileData);
+                const res = await putRecord(STORES.files, fileData);
+                try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+                resolve(res ? fileData : fileData);
             } catch (err) {
                 reject(err);
             }
@@ -271,7 +291,9 @@ async function uploadFile(file, category) {
 }
 
 async function deleteFile(fileId) {
-    return deleteRecord(STORES.files, fileId);
+    const res = await deleteRecord(STORES.files, fileId);
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function getFile(fileId) {
@@ -292,16 +314,20 @@ async function getFilesByCategory(category) {
 // ============================================
 
 async function addBackgroundPhoto(photo) {
-    return putRecord(STORES.photos, {
+    const res = await putRecord(STORES.photos, {
         ...photo,
         id: photo.id || generateUUID(),
         added_at: getISOTimestamp(),
         added_by: getCurrentUserId()
     });
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function deleteBackgroundPhoto(photoId) {
-    return deleteRecord(STORES.photos, photoId);
+    const res = await deleteRecord(STORES.photos, photoId);
+    try { if (typeof syncToFirebase === 'function') syncToFirebase(); } catch (e) {}
+    return res;
 }
 
 async function getAllBackgroundPhotos() {
@@ -539,8 +565,8 @@ async function initializeDefaultData() {
     
     // Default users list - 40 DPRD members + staff
     const defaultUsers = [
-        // Super Admin
-        { username: 'Staf', pin: '1234', role: 'superadmin', pinChanged: false },
+        // Super Admin (updated)
+        { username: 'DONI', email: 'doni@example.com', pin: '654321', role: 'superadmin', pinChanged: false },
         
         // DPRD Members (35)
         { username: 'Paulus Peos', pin: '1234', role: 'user', pinChanged: false },
