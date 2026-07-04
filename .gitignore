@@ -1,0 +1,40 @@
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
+
+# Node modules (if any)
+node_modules/
+
+# Archives / build outputs
+*.zip
+dist/
+
+# Environment files
+.env
+
+# Temporary files
+*.tmp
+*.temp
+
+# Project scratch files
+js/Untitled-1.txt
+
+# Unwanted workspace artifacts
+New folder/
+gambar background/
+│     app.js
+
+# Mac / Windows Thumbs
+Desktop.ini
+
+# Editor swap files
+*.swp
+
+# Mac resource fork
+._*
