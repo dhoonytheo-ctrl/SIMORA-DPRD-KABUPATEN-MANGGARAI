@@ -50,12 +50,16 @@ async function setFirebaseConfig(config) {
 
 async function initFirebaseFromSettings() {
     try {
-        const cfg = await getSetting('firebase_config');
-        if (cfg) {
-            await initFirebase(cfg);
+        const storedCfg = await getSetting('firebase_config');
+        const cfg = (window && window.firebaseConfig) ? window.firebaseConfig : storedCfg;
+        if (!cfg) {
+            return false;
         }
+        const ok = await initFirebase(cfg);
+        return ok;
     } catch (err) {
         error('initFirebaseFromSettings error:', err);
+        return false;
     }
 }
 
