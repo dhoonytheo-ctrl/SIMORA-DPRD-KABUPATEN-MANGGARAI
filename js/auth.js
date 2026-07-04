@@ -118,8 +118,11 @@ async function changePin(username, oldPin, newPin, confirmPin) {
             return { success: false, message: 'Pengguna tidak ditemukan' };
         }
         
+        // Allow Super Admin first-time PIN change without providing old PIN
         if (user.pin !== oldPin) {
-            return { success: false, message: 'PIN lama tidak sesuai' };
+            if (!(user.role === 'superadmin' && user.pinChanged === false && (!oldPin || String(oldPin).trim() === '')) ) {
+                return { success: false, message: 'PIN lama tidak sesuai' };
+            }
         }
         
         // Update user PIN

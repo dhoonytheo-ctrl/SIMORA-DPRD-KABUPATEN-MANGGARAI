@@ -815,9 +815,18 @@ async function toggleDataLock(tableName) {
 }
 
 function showChangePinModal(username) {
+    // If superadmin and we can read the existing PIN, prefill oldPin to help first-time change
+    let prefillOld = '';
+    (async () => {
+        try {
+            const u = await getUserByUsername(username);
+            if (u && u.role === 'superadmin' && u.pin) prefillOld = u.pin;
+        } catch (e) { /* ignore */ }
+    })();
+
     const html = `
         <form id="changePinForm">
-            ${createFormField('password', 'oldPin', 'PIN Lama', '', { required: true }).outerHTML}
+            ${createFormField('password', 'oldPin', 'PIN Lama', prefillOld, { required: true }).outerHTML}
             ${createFormField('password', 'newPin', 'PIN Baru (4-6 digit)', '', { required: true, placeholder: '1234' }).outerHTML}
             ${createFormField('password', 'confirmPin', 'Konfirmasi PIN Baru', '', { required: true }).outerHTML}
         </form>
