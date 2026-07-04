@@ -17,6 +17,17 @@ async function initializeApp() {
         
         // Initialize default data
         await initializeDefaultData();
+
+        // Initialize Firebase sync if config present
+        if (typeof initFirebaseFromSettings === 'function') {
+            const ok = await initFirebaseFromSettings();
+            if (ok && typeof pullFromFirebase === 'function') {
+                // Merge remote data into local DB (safe merge)
+                await pullFromFirebase();
+                // Start periodic sync to remote
+                if (typeof startAutoSync === 'function') startAutoSync(5 * 60 * 1000);
+            }
+        }
         
         // Show app container
         document.getElementById('appContainer').style.display = 'block';
